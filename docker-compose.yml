@@ -1,0 +1,60 @@
+version: '3.8'
+services:
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3.11-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  comyno-sender:
+    build: ./comyno-sender
+    container_name: comyno-sender
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./comyno-sender:/app
+    depends_on:
+      - db
+      - rabbitmq
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/comyno
+      - SPRING_DATASOURCE_USERNAME=admin
+      - SPRING_DATASOURCE_PASSWORD=admin
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+
+  comyno-receiver:
+    build: ./comyno-receiver
+    container_name: comyno-receiver
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./comyno-receiver:/app
+    depends_on:
+      - db
+      - rabbitmq
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/comyno
+      - SPRING_DATASOURCE_USERNAME=admin
+      - SPRING_DATASOURCE_PASSWORD=admin
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+
+  db:
+    image: 'postgres:latest'
+    container_name: db
+    restart: always
+    environment:
+      - POSTGRES_DB=comyno
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin4_container
+    restart: always
+    ports:
+      - "5050:5050"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_LISTEN_PORT: 5050
